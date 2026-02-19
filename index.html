@@ -44,21 +44,23 @@
         .view-active { display: block; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Bottom Nav App Style */
+        /* Bottom Nav App Style - Alterado para FLEX para se adaptar à quantidade de botões */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #ffffff; border-top: 1px solid #e2e8f0;
-            display: grid; grid-template-columns: repeat(4, 1fr);
+            display: flex; justify-content: space-around;
             height: 80px; padding-bottom: env(safe-area-inset-bottom);
             z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
         }
         .nav-item {
+            flex: 1; /* Faz o botão preencher o espaço se for o único */
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: #94a3b8; font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
         }
         .nav-item.active { color: #2563eb; }
         .nav-item i { font-size: 1.3rem; margin-bottom: 4px; transition: transform 0.2s; }
         .nav-item.active i { transform: translateY(-2px); }
+        .hidden-nav { display: none !important; }
     </style>
 </head>
 <body>
@@ -85,14 +87,14 @@
         <header class="p-5 flex justify-between items-center bg-slate-900 text-white sticky top-0 z-50 shadow-md">
             <div>
                 <h1 class="text-xl font-black italic">GM<span class="text-blue-400">PNEUS</span></h1>
-                <span id="role-display" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest"></span>
-            </div>
-            <div class="flex items-center gap-3">
-                <span id="user-display" class="font-bold text-xs uppercase hidden sm:block"></span>
-                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                    <i class="fas fa-user text-xs"></i>
+                <div class="flex items-center gap-2 mt-1">
+                    <span id="role-display" class="bg-blue-600 px-2 py-0.5 rounded text-[8px] font-bold text-white uppercase tracking-widest"></span>
+                    <span id="user-display" class="text-[10px] font-bold text-slate-300 uppercase"></span>
                 </div>
             </div>
+            <button onclick="fazerLogout()" class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-colors">
+                <i class="fas fa-power-off"></i>
+            </button>
         </header>
 
         <main class="p-4 sm:p-6 max-w-lg mx-auto">
@@ -108,11 +110,11 @@
 
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                            <label class="text-[10px] font-black text-blue-600 block mb-2 text-center uppercase">Coletados</label>
+                            <label class="text-[10px] font-black text-blue-600 block mb-2 text-center uppercase">Coletados (+)</label>
                             <input id="qtd-coleta" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <label class="text-[10px] font-black text-slate-600 block mb-2 text-center uppercase">Entregues</label>
+                            <label class="text-[10px] font-black text-slate-600 block mb-2 text-center uppercase">Entregues (-)</label>
                             <input id="qtd-entrega" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
                         </div>
                     </div>
@@ -121,20 +123,6 @@
                         <i class="fas fa-check mr-2"></i> Confirmar Produtividade
                     </button>
                 </div>
-            </section>
-
-            <section id="view-dashboard" class="view-section">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-black text-slate-900 uppercase">Produtividade</h2>
-                    <select id="filtro-mes" onchange="renderDashboard()" class="bg-white border border-slate-200 text-slate-900 p-2 rounded-lg font-bold text-xs outline-none"></select>
-                </div>
-
-                <button onclick="gerarDocumentoPDF()" class="btn-black w-full mb-6 text-xs">
-                    <i class="fas fa-file-pdf mr-2 text-blue-400"></i> Baixar Relatório (PDF)
-                </button>
-
-                <h3 class="text-xs font-black text-slate-400 uppercase mb-3 ml-1">Volume por Empresa</h3>
-                <div id="tabela-mobile-saldos" class="space-y-3"></div>
             </section>
 
             <section id="view-empresas" class="view-section">
@@ -151,20 +139,58 @@
                 <div id="lista-clientes" class="space-y-2"></div>
             </section>
 
+            <section id="view-dashboard" class="view-section">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black text-slate-900 uppercase">Produtividade</h2>
+                    <select id="filtro-mes" onchange="renderDashboard()" class="bg-white border border-slate-200 text-slate-900 p-2 rounded-lg font-bold text-xs outline-none"></select>
+                </div>
+
+                <button onclick="gerarDocumentoPDF()" class="btn-black w-full mb-6 text-xs">
+                    <i class="fas fa-file-pdf mr-2 text-blue-400"></i> Baixar Relatório (PDF)
+                </button>
+
+                <h3 class="text-xs font-black text-slate-400 uppercase mb-3 ml-1">Volume por Empresa</h3>
+                <div id="tabela-mobile-saldos" class="space-y-3"></div>
+            </section>
+
+            <section id="view-equipe" class="view-section">
+                <h2 class="text-xl font-black text-slate-900 uppercase mb-6">Equipe de Operação</h2>
+                
+                <div id="form-equipe" class="mb-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hidden">
+                    <label class="text-[10px] font-black text-slate-400 block mb-2 uppercase">Criar Novo Acesso</label>
+                    <div class="space-y-3">
+                        <input id="eq-nome" type="text" placeholder="Nome" class="input-app !h-[55px] !text-sm">
+                        <input id="eq-sobrenome" type="text" placeholder="Sobrenome" class="input-app !h-[55px] !text-sm">
+                        <input id="eq-senha" type="password" placeholder="Senha (Mínimo 6)" class="input-app !h-[55px] !text-sm">
+                        <select id="eq-cargo" class="input-app !h-[55px] !text-sm appearance-none bg-white">
+                            <option value="operador">Operador (Apenas Lançamentos)</option>
+                            <option value="gestor">Gestor (Acesso Total)</option>
+                        </select>
+                        <button onclick="window.cadastrarEquipeCompleto()" class="btn-blue w-full !h-[55px] !text-xs mt-2">
+                            <i class="fas fa-user-plus mr-2"></i> Criar Login
+                        </button>
+                    </div>
+                </div>
+
+                <h3 class="text-xs font-black text-slate-400 uppercase mb-3 ml-1">Usuários no Sistema</h3>
+                <div id="lista-equipe" class="space-y-2"></div>
+            </section>
+
         </main>
 
         <nav class="bottom-nav max-w-lg mx-auto">
-            <button onclick="showView('view-movimentacao', this)" class="nav-item active">
+            <button id="nav-btn-lancamento" onclick="showView('view-movimentacao', this)" class="nav-item active">
                 <i class="fas fa-pen-to-square"></i><span>Lançar</span>
             </button>
-            <button onclick="showView('view-empresas', this)" class="nav-item">
+            
+            <button id="nav-btn-clientes" onclick="showView('view-empresas', this)" class="nav-item">
                 <i class="fas fa-truck"></i><span>Clientes</span>
             </button>
-            <button onclick="showView('view-dashboard', this)" class="nav-item">
+            <button id="nav-btn-relatorios" onclick="showView('view-dashboard', this)" class="nav-item">
                 <i class="fas fa-chart-line"></i><span>Relatórios</span>
             </button>
-            <button onclick="fazerLogout()" class="nav-item text-red-500">
-                <i class="fas fa-arrow-right-from-bracket"></i><span>Sair</span>
+            <button id="nav-btn-equipe" onclick="showView('view-equipe', this)" class="nav-item">
+                <i class="fas fa-users"></i><span>Equipe</span>
             </button>
         </nav>
     </div>
@@ -173,8 +199,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZPhd2ya8EQRbDd293-rijw6ODPEzo6zc",
@@ -186,17 +212,22 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const secondaryApp = initializeApp(firebaseConfig, "Secondary");
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const secondaryAuth = getAuth(secondaryApp);
         const DOMINIO = "@gmcollect.com";
-        const SUPREMO = "amg.gui@gmail.com";
+        const SUPREMO = "amg.gui@gmail.com"; 
 
-        window.showLoader = (s) => document.getElementById('loader').classList.toggle('hidden', !s);
+        window.showLoader = (s, text = 'Aguarde...') => {
+            document.getElementById('loader-text').innerText = text;
+            document.getElementById('loader').classList.toggle('hidden', !s);
+        };
 
         window.fazerLogin = () => {
             let u = document.getElementById('login-usuario').value.trim().toLowerCase();
             if(!u.includes('@')) u += DOMINIO;
-            window.showLoader(true);
+            window.showLoader(true, 'Autenticando...');
             signInWithEmailAndPassword(auth, u, document.getElementById('login-senha').value).catch(() => {
                 alert("Usuário ou senha inválidos.");
                 window.showLoader(false);
@@ -210,7 +241,7 @@
                 const userDoc = await getDoc(doc(db, "usuarios", user.uid));
                 const d = userDoc.exists() ? userDoc.data() : { cargo: 'operador', nome: user.email.split('@')[0] };
                 
-                // Define as permissões (Se for o e-mail mestre, vira supremo automaticamente)
+                // Define as permissões
                 window.userRole = (user.email.toLowerCase() === SUPREMO || d.cargo === 'gestor') ? 'gestor' : 'operador';
                 if(user.email.toLowerCase() === SUPREMO) window.userRole = 'supremo'; 
                 
@@ -220,15 +251,31 @@
                 document.getElementById('app-content').classList.remove('hidden');
                 document.getElementById('user-display').innerText = d.nome;
                 
-                // Personaliza o título com base no cargo
-                let displayCargo = window.userRole === 'supremo' ? 'ADMIN MASTER' : window.userRole;
+                let displayCargo = window.userRole === 'supremo' ? 'MASTER' : window.userRole;
                 document.getElementById('role-display').innerText = displayCargo;
                 
-                // CONTROLE DE ACESSO VISUAL: Mostra formulário de cliente apenas para Gestor/Supremo
+                // ----------------------------------------------------
+                // SISTEMA DE BLOQUEIO TOTAL (OPERADOR VS GESTOR)
+                // ----------------------------------------------------
                 if (window.userRole === 'gestor' || window.userRole === 'supremo') {
+                    // Gestor vê os formulários administrativos
                     document.getElementById('form-cliente').classList.remove('hidden');
+                    document.getElementById('form-equipe').classList.remove('hidden');
+                    // Gestor vê todos os botões do menu inferior
+                    document.getElementById('nav-btn-clientes').classList.remove('hidden-nav');
+                    document.getElementById('nav-btn-relatorios').classList.remove('hidden-nav');
+                    document.getElementById('nav-btn-equipe').classList.remove('hidden-nav');
                 } else {
+                    // Operador NÃO vê os formulários
                     document.getElementById('form-cliente').classList.add('hidden');
+                    document.getElementById('form-equipe').classList.add('hidden');
+                    // Operador NÃO vê as abas do menu (Some completamente da tela)
+                    document.getElementById('nav-btn-clientes').classList.add('hidden-nav');
+                    document.getElementById('nav-btn-relatorios').classList.add('hidden-nav');
+                    document.getElementById('nav-btn-equipe').classList.add('hidden-nav');
+                    
+                    // Se tentar burlar, força o retorno para Lançamento
+                    showView('view-movimentacao', document.getElementById('nav-btn-lancamento'));
                 }
                 
                 conectarDados();
@@ -246,7 +293,20 @@
             });
             onSnapshot(collection(db, "movimentacoes"), (snap) => {
                 window.movimentacoes = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderDashboard();
+                if(window.userRole !== 'operador') renderDashboard(); // Operador não processa gráficos
+            });
+            onSnapshot(collection(db, "usuarios"), (snap) => {
+                if(window.userRole === 'operador') return; // Segurança extra
+                const cont = document.getElementById('lista-equipe');
+                cont.innerHTML = '';
+                snap.docs.forEach(u => {
+                    const d = u.data();
+                    cont.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl flex justify-between items-center border border-slate-100 shadow-sm">
+                            <span class="font-bold text-sm text-slate-800 uppercase">${d.nome} ${d.sobrenome || ''}</span>
+                            <span class="text-[10px] font-black text-blue-500 uppercase">${d.cargo}</span>
+                        </div>`;
+                });
             });
         }
 
@@ -256,7 +316,7 @@
             const e = parseInt(document.getElementById('qtd-entrega').value) || 0;
             if(!id || (c===0 && e===0)) return alert("Preencha cliente e quantidade.");
             
-            window.showLoader(true);
+            window.showLoader(true, 'Salvando...');
             await addDoc(collection(db, "movimentacoes"), {
                 empresaId: id, coleta: c, entrega: e, mes: new Date().getMonth()+1, ano: new Date().getFullYear(),
                 registradoPor: window.userData.nome, data: new Date().toISOString()
@@ -264,27 +324,51 @@
             document.getElementById('qtd-coleta').value = ''; 
             document.getElementById('qtd-entrega').value = '';
             window.showLoader(false);
-            alert("Produtividade Registrada com Sucesso!");
+            alert("Lançamento Registrado!");
+        };
+
+        window.cadastrarEquipeCompleto = async () => {
+            if (window.userRole === 'operador') return alert("Acesso Negado.");
+
+            const n = document.getElementById('eq-nome').value.trim();
+            const s = document.getElementById('eq-sobrenome').value.trim();
+            const p = document.getElementById('eq-senha').value;
+            const c = document.getElementById('eq-cargo').value;
+            const email = (n + "." + s).toLowerCase() + DOMINIO;
+
+            if(!n || p.length < 6) return alert("Preencha o nome e uma senha com mínimo de 6 caracteres.");
+
+            window.showLoader(true, "Criando Login...");
+            try {
+                const cred = await createUserWithEmailAndPassword(secondaryAuth, email, p);
+                await setDoc(doc(db, "usuarios", cred.user.uid), { nome: n, sobrenome: s, cargo: c, email: email });
+                await signOut(secondaryAuth);
+                
+                alert("Funcionário cadastrado com sucesso!");
+                document.getElementById('eq-nome').value = '';
+                document.getElementById('eq-sobrenome').value = '';
+                document.getElementById('eq-senha').value = '';
+            } catch (err) {
+                alert("Erro ao cadastrar: " + err.message);
+            }
+            window.showLoader(false);
         };
 
         window.salvarEmpresa = async () => {
-            // CONTROLE DE ACESSO LÓGICO: Protege a função no banco
-            if (window.userRole !== 'gestor' && window.userRole !== 'supremo') {
-                return alert("Acesso Negado: Apenas gestores podem cadastrar novos clientes.");
-            }
+            if (window.userRole === 'operador') return alert("Acesso Negado.");
 
             const n = document.getElementById('cad-nome-cliente').value.trim().toUpperCase();
             if(!n) return;
             
-            window.showLoader(true);
+            window.showLoader(true, 'Salvando...');
             await addDoc(collection(db, "empresas"), { nome: n });
             document.getElementById('cad-nome-cliente').value = '';
             window.showLoader(false);
-            alert("Cliente cadastrado com sucesso!");
+            alert("Cliente cadastrado!");
         };
 
         window.removerCliente = async (id) => { 
-            if (window.userRole !== 'gestor' && window.userRole !== 'supremo') return;
+            if (window.userRole === 'operador') return;
             if(confirm("Apagar cliente do sistema?")) await deleteDoc(doc(db, "empresas", id)); 
         };
     </script>
@@ -303,11 +387,12 @@
             sel.innerHTML = '<option value="">-- ESCOLHER CLIENTE --</option>';
             window.empresas?.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(e => sel.innerHTML += `<option value="${e.id}">${e.nome}</option>`);
             
+            if(window.userRole === 'operador') return; // Operador não precisa renderizar a lista de clientes com lixeira
+            
             const cont = document.getElementById('lista-clientes');
             cont.innerHTML = '';
             window.empresas?.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(e => {
-                // Apenas Gestor e Supremo veem a lixeira
-                const del = (window.userRole === 'gestor' || window.userRole === 'supremo') ? `<button onclick="window.removerCliente('${e.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>` : '';
+                const del = `<button onclick="window.removerCliente('${e.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>`;
                 cont.innerHTML += `<div class="bg-white p-4 rounded-xl flex justify-between items-center border border-slate-100 shadow-sm font-bold text-sm text-slate-800 uppercase">${e.nome}${del}</div>`;
             });
         }
@@ -330,7 +415,7 @@
                         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div class="flex justify-between items-center mb-2 border-b border-slate-100 pb-2">
                                 <span class="font-black text-sm text-slate-800 uppercase">${emp.nome}</span>
-                                <span class="text-xs font-black text-blue-600 uppercase">Total: ${totalMovimentado}</span>
+                                <span class="text-xs font-black text-blue-600 uppercase">Volume: ${totalMovimentado}</span>
                             </div>
                             <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
                                 <span>Coletados: <b class="text-slate-900 text-sm">${c}</b></span>
@@ -349,7 +434,6 @@
             meses.forEach((m,i)=>mS.innerHTML+=`<option value="${i+1}" ${new Date().getMonth()==i?'selected':''}>${m}</option>`);
         }
 
-        // GERADOR DE PDF DE PRODUTIVIDADE
         window.gerarDocumentoPDF = () => {
             window.showLoader(true, 'Gerando PDF...');
             
@@ -433,8 +517,8 @@
                             <thead>
                                 <tr>
                                     <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:left;">Operador Responsável</th>
-                                    <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Ações de Coleta</th>
-                                    <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Ações de Entrega</th>
+                                    <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Coletas (Vol.)</th>
+                                    <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Entregas (Vol.)</th>
                                     <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:right;">Pneus Movimentados</th>
                                 </tr>
                             </thead>
