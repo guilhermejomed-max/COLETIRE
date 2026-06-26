@@ -108,14 +108,18 @@
                         <select id="select-empresa-mov" class="input-app appearance-none text-sm"></select>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                             <label class="text-[10px] font-black text-blue-600 block mb-2 text-center uppercase">Coletados (+)</label>
                             <input id="qtd-coleta" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <label class="text-[10px] font-black text-slate-600 block mb-2 text-center uppercase">Entregues (-)</label>
+                            <label class="text-[10px] font-black text-slate-600 block mb-2 text-center uppercase">Entregues / Aprovados (-)</label>
                             <input id="qtd-entrega" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
+                        </div>
+                        <div class="bg-red-50/60 p-4 rounded-xl border border-red-100">
+                            <label class="text-[10px] font-black text-red-600 block mb-2 text-center uppercase">Recusados (-)</label>
+                            <input id="qtd-recusado" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
                         </div>
                     </div>
 
@@ -314,15 +318,17 @@
             const id = document.getElementById('select-empresa-mov').value;
             const c = parseInt(document.getElementById('qtd-coleta').value) || 0;
             const e = parseInt(document.getElementById('qtd-entrega').value) || 0;
-            if(!id || (c===0 && e===0)) return alert("Preencha cliente e quantidade.");
+            const r = parseInt(document.getElementById('qtd-recusado').value) || 0;
+            if(!id || (c===0 && e===0 && r===0)) return alert("Preencha cliente e quantidade.");
             
             window.showLoader(true, 'Salvando...');
             await addDoc(collection(db, "movimentacoes"), {
-                empresaId: id, coleta: c, entrega: e, mes: new Date().getMonth()+1, ano: new Date().getFullYear(),
+                empresaId: id, coleta: c, entrega: e, recusados: r, mes: new Date().getMonth()+1, ano: new Date().getFullYear(),
                 registradoPor: window.userData.nome, data: new Date().toISOString()
             });
             document.getElementById('qtd-coleta').value = ''; 
             document.getElementById('qtd-entrega').value = '';
+            document.getElementById('qtd-recusado').value = '';
             window.showLoader(false);
             alert("Lançamento Registrado!");
         };
@@ -406,9 +412,10 @@
             
             window.empresas?.forEach(emp => {
                 const movs = window.movimentacoes.filter(m => m.empresaId == emp.id && m.mes == mes && m.ano == ano);
-                const c = movs.reduce((a,b)=>a+b.coleta,0);
-                const e = movs.reduce((a,b)=>a+b.entrega,0);
-                const totalMovimentado = c + e;
+                const c = movs.reduce((a,b)=>a+(Number(b.coleta)||0),0);
+                const e = movs.reduce((a,b)=>a+(Number(b.entrega)||0),0);
+                const r = movs.reduce((a,b)=>a+(Number(b.recusados)||0),0);
+                const totalMovimentado = c + e + r;
                 
                 if(totalMovimentado > 0) {
                     cont.innerHTML += `
@@ -417,9 +424,10 @@
                                 <span class="font-black text-sm text-slate-800 uppercase">${emp.nome}</span>
                                 <span class="text-xs font-black text-blue-600 uppercase">Volume: ${totalMovimentado}</span>
                             </div>
-                            <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                            <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-slate-500 uppercase">
                                 <span>Coletados: <b class="text-slate-900 text-sm">${c}</b></span>
                                 <span>Entregues: <b class="text-slate-900 text-sm">${e}</b></span>
+                                <span>Recusados: <b class="text-red-600 text-sm">${r}</b></span>
                             </div>
                         </div>
                     `;
@@ -441,34 +449,35 @@
             const mesNum = parseInt(document.getElementById('filtro-mes').value);
             const ano = new Date().getFullYear();
             
-            let totalC = 0, totalE = 0, produtividadeGeral = 0;
+            let totalC = 0, totalE = 0, totalR = 0, produtividadeGeral = 0;
             let linhasClientes = '';
             let linhasEquipe = '';
             
             window.empresas?.forEach(emp => {
                 const movs = window.movimentacoes.filter(m => m.empresaId == emp.id && m.mes == mesNum && m.ano == ano);
-                const c = movs.reduce((a,b)=>a+b.coleta,0);
-                const e = movs.reduce((a,b)=>a+b.entrega,0);
-                const t = c + e; 
-                totalC += c; totalE += e; produtividadeGeral += t;
+                const c = movs.reduce((a,b)=>a+(Number(b.coleta)||0),0);
+                const e = movs.reduce((a,b)=>a+(Number(b.entrega)||0),0);
+                const r = movs.reduce((a,b)=>a+(Number(b.recusados)||0),0);
+                const t = c + e + r; 
+                totalC += c; totalE += e; totalR += r; produtividadeGeral += t;
                 
                 if(t > 0) {
-                    linhasClientes += `<tr style="background-color: #ffffff;"><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:bold;">${emp.nome.toUpperCase()}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${c}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${e}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:right; font-weight:900; color:#2563eb;">${t} Pneus</td></tr>`;
+                    linhasClientes += `<tr style="background-color: #ffffff;"><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:bold;">${emp.nome.toUpperCase()}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${c}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${e}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center; color:#dc2626; font-weight:bold;">${r}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:right; font-weight:900; color:#2563eb;">${t} Pneus</td></tr>`;
                 }
             });
 
-            if(linhasClientes === '') linhasClientes = `<tr><td colspan="4" style="text-align:center; padding: 20px;">Nenhuma produtividade registrada neste mês.</td></tr>`;
+            if(linhasClientes === '') linhasClientes = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Nenhuma produtividade registrada neste mês.</td></tr>`;
 
             const perfMap = {};
             window.movimentacoes.filter(m => m.mes == mesNum && m.ano == ano).forEach(m => {
                 const u = m.registradoPor || "Sistema";
-                if(!perfMap[u]) perfMap[u] = { c: 0, e: 0 };
-                perfMap[u].c += m.coleta; perfMap[u].e += m.entrega;
+                if(!perfMap[u]) perfMap[u] = { c: 0, e: 0, r: 0 };
+                perfMap[u].c += Number(m.coleta)||0; perfMap[u].e += Number(m.entrega)||0; perfMap[u].r += Number(m.recusados)||0;
             });
             Object.entries(perfMap).forEach(([nome, d]) => {
-                linhasEquipe += `<tr style="background-color: #ffffff;"><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:bold; text-transform:uppercase;">${nome}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${d.c}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${d.e}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:right; font-weight:900; color:#0f172a;">${d.c + d.e}</td></tr>`;
+                linhasEquipe += `<tr style="background-color: #ffffff;"><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:bold; text-transform:uppercase;">${nome}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${d.c}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${d.e}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center; color:#dc2626; font-weight:bold;">${d.r}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:right; font-weight:900; color:#0f172a;">${d.c + d.e + d.r}</td></tr>`;
             });
-            if(linhasEquipe === '') linhasEquipe = `<tr><td colspan="4" style="text-align:center; padding: 20px;">Sem registros de equipe.</td></tr>`;
+            if(linhasEquipe === '') linhasEquipe = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Sem registros de equipe.</td></tr>`;
 
             const htmlString = `
                 <div style="font-family: Arial, sans-serif; padding: 40px; color: #0f172a; background: #ffffff; width: 750px; box-sizing: border-box;">
@@ -492,6 +501,10 @@
                             <p style="margin:0; font-size:10px; color:#64748b; font-weight:bold; text-transform:uppercase;">Total Entregue</p>
                             <h2 style="margin:5px 0 0 0; color:#0f172a; font-size:24px;">${totalE}</h2>
                         </div>
+                        <div style="flex:1; background:#fff1f2; border:1px solid #fecdd3; padding:15px; border-radius:8px; text-align:center;">
+                            <p style="margin:0; font-size:10px; color:#dc2626; font-weight:bold; text-transform:uppercase;">Total Recusado</p>
+                            <h2 style="margin:5px 0 0 0; color:#dc2626; font-size:24px;">${totalR}</h2>
+                        </div>
                         <div style="flex:1; background:#eff6ff; border:2px solid #2563eb; padding:15px; border-radius:8px; text-align:center;">
                             <p style="margin:0; font-size:10px; color:#2563eb; font-weight:bold; text-transform:uppercase;">Volume Total Movimentado</p>
                             <h2 style="margin:5px 0 0 0; color:#2563eb; font-size:24px;">${produtividadeGeral}</h2>
@@ -505,6 +518,7 @@
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:left;">Cliente / Transportadora</th>
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Pneus Coletados</th>
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Pneus Entregues</th>
+                                <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Pneus Recusados</th>
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:right;">Total Manipulado</th>
                             </tr>
                         </thead>
@@ -519,6 +533,7 @@
                                     <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:left;">Operador Responsável</th>
                                     <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Coletas (Vol.)</th>
                                     <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Entregas (Vol.)</th>
+                                    <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Recusados (Vol.)</th>
                                     <th style="background:#f1f5f9; color:#0f172a; border-bottom:2px solid #cbd5e1; padding:12px; font-size:11px; text-transform:uppercase; text-align:right;">Pneus Movimentados</th>
                                 </tr>
                             </thead>
