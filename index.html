@@ -114,7 +114,7 @@
                             <input id="qtd-coleta" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <label class="text-[10px] font-black text-slate-600 block mb-2 text-center uppercase">Entregues / Aprovados (-)</label>
+                            <label class="text-[10px] font-black text-slate-600 block mb-2 text-center uppercase">Total Entregue (-)</label>
                             <input id="qtd-entrega" type="number" inputmode="numeric" placeholder="0" class="w-full bg-transparent text-center text-4xl font-black text-slate-900 outline-none">
                         </div>
                         <div class="bg-red-50/60 p-4 rounded-xl border border-red-100">
@@ -317,13 +317,15 @@
         window.salvarMovimentacao = async () => {
             const id = document.getElementById('select-empresa-mov').value;
             const c = parseInt(document.getElementById('qtd-coleta').value) || 0;
-            const e = parseInt(document.getElementById('qtd-entrega').value) || 0;
+            const totalEntrega = parseInt(document.getElementById('qtd-entrega').value) || 0;
             const r = parseInt(document.getElementById('qtd-recusado').value) || 0;
-            if(!id || (c===0 && e===0 && r===0)) return alert("Preencha cliente e quantidade.");
+            const e = Math.max(totalEntrega - r, 0);
+            if(!id || (c===0 && totalEntrega===0 && r===0)) return alert("Preencha cliente e quantidade.");
+            if(r > totalEntrega) return alert("Recusados não pode ser maior que o total entregue.");
             
             window.showLoader(true, 'Salvando...');
             await addDoc(collection(db, "movimentacoes"), {
-                empresaId: id, coleta: c, entrega: e, recusados: r, mes: new Date().getMonth()+1, ano: new Date().getFullYear(),
+                empresaId: id, coleta: c, entrega: e, entregaTotal: totalEntrega, recusados: r, mes: new Date().getMonth()+1, ano: new Date().getFullYear(),
                 registradoPor: window.userData.nome, data: new Date().toISOString()
             });
             document.getElementById('qtd-coleta').value = ''; 
@@ -403,6 +405,20 @@
             });
         }
 
+        function numero(valor) {
+            return Number(valor) || 0;
+        }
+
+        function getRecusados(mov) {
+            return numero(mov.recusados);
+        }
+
+        function getEntreguesAprovados(mov) {
+            const recusados = getRecusados(mov);
+            const totalEntregue = mov.entregaTotal === undefined ? numero(mov.entrega) : numero(mov.entregaTotal);
+            return Math.max(totalEntregue - recusados, 0);
+        }
+
         function renderDashboard() {
             carregarFiltros();
             const mes = parseInt(document.getElementById('filtro-mes').value);
@@ -413,8 +429,8 @@
             window.empresas?.forEach(emp => {
                 const movs = window.movimentacoes.filter(m => m.empresaId == emp.id && m.mes == mes && m.ano == ano);
                 const c = movs.reduce((a,b)=>a+(Number(b.coleta)||0),0);
-                const e = movs.reduce((a,b)=>a+(Number(b.entrega)||0),0);
-                const r = movs.reduce((a,b)=>a+(Number(b.recusados)||0),0);
+                const e = movs.reduce((a,b)=>a+getEntreguesAprovados(b),0);
+                const r = movs.reduce((a,b)=>a+getRecusados(b),0);
                 const totalMovimentado = c + e + r;
                 
                 if(totalMovimentado > 0) {
@@ -456,8 +472,8 @@
             window.empresas?.forEach(emp => {
                 const movs = window.movimentacoes.filter(m => m.empresaId == emp.id && m.mes == mesNum && m.ano == ano);
                 const c = movs.reduce((a,b)=>a+(Number(b.coleta)||0),0);
-                const e = movs.reduce((a,b)=>a+(Number(b.entrega)||0),0);
-                const r = movs.reduce((a,b)=>a+(Number(b.recusados)||0),0);
+                const e = movs.reduce((a,b)=>a+getEntreguesAprovados(b),0);
+                const r = movs.reduce((a,b)=>a+getRecusados(b),0);
                 const t = c + e + r; 
                 totalC += c; totalE += e; totalR += r; produtividadeGeral += t;
                 
@@ -472,7 +488,7 @@
             window.movimentacoes.filter(m => m.mes == mesNum && m.ano == ano).forEach(m => {
                 const u = m.registradoPor || "Sistema";
                 if(!perfMap[u]) perfMap[u] = { c: 0, e: 0, r: 0 };
-                perfMap[u].c += Number(m.coleta)||0; perfMap[u].e += Number(m.entrega)||0; perfMap[u].r += Number(m.recusados)||0;
+                perfMap[u].c += Number(m.coleta)||0; perfMap[u].e += getEntreguesAprovados(m); perfMap[u].r += getRecusados(m);
             });
             Object.entries(perfMap).forEach(([nome, d]) => {
                 linhasEquipe += `<tr style="background-color: #ffffff;"><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:bold; text-transform:uppercase;">${nome}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${d.c}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${d.e}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center; color:#dc2626; font-weight:bold;">${d.r}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:right; font-weight:900; color:#0f172a;">${d.c + d.e + d.r}</td></tr>`;
