@@ -431,14 +431,15 @@
                 const c = movs.reduce((a,b)=>a+(Number(b.coleta)||0),0);
                 const e = movs.reduce((a,b)=>a+getEntreguesAprovados(b),0);
                 const r = movs.reduce((a,b)=>a+getRecusados(b),0);
-                const totalMovimentado = c + e + r;
+                const volumeCarregado = c;
+                const totalAtividade = c + e + r;
                 
-                if(totalMovimentado > 0) {
+                if(totalAtividade > 0) {
                     cont.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div class="flex justify-between items-center mb-2 border-b border-slate-100 pb-2">
                                 <span class="font-black text-sm text-slate-800 uppercase">${emp.nome}</span>
-                                <span class="text-xs font-black text-blue-600 uppercase">Volume: ${totalMovimentado}</span>
+                                <span class="text-xs font-black text-blue-600 uppercase">Volume: ${volumeCarregado}</span>
                             </div>
                             <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-slate-500 uppercase">
                                 <span>Coletados: <b class="text-slate-900 text-sm">${c}</b></span>
@@ -474,10 +475,11 @@
                 const c = movs.reduce((a,b)=>a+(Number(b.coleta)||0),0);
                 const e = movs.reduce((a,b)=>a+getEntreguesAprovados(b),0);
                 const r = movs.reduce((a,b)=>a+getRecusados(b),0);
-                const t = c + e + r; 
+                const t = c;
+                const totalAtividade = c + e + r;
                 totalC += c; totalE += e; totalR += r; produtividadeGeral += t;
                 
-                if(t > 0) {
+                if(totalAtividade > 0) {
                     linhasClientes += `<tr style="background-color: #ffffff;"><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:bold;">${emp.nome.toUpperCase()}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${c}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center;">${e}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:center; color:#dc2626; font-weight:bold;">${r}</td><td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; text-align:right; font-weight:900; color:#2563eb;">${t} Pneus</td></tr>`;
                 }
             });
@@ -522,7 +524,7 @@
                             <h2 style="margin:5px 0 0 0; color:#dc2626; font-size:24px;">${totalR}</h2>
                         </div>
                         <div style="flex:1; background:#eff6ff; border:2px solid #2563eb; padding:15px; border-radius:8px; text-align:center;">
-                            <p style="margin:0; font-size:10px; color:#2563eb; font-weight:bold; text-transform:uppercase;">Volume Total Movimentado</p>
+                            <p style="margin:0; font-size:10px; color:#2563eb; font-weight:bold; text-transform:uppercase;">Volume Total Carregado</p>
                             <h2 style="margin:5px 0 0 0; color:#2563eb; font-size:24px;">${produtividadeGeral}</h2>
                         </div>
                     </div>
@@ -535,7 +537,7 @@
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Pneus Coletados</th>
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Pneus Entregues</th>
                                 <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:center;">Pneus Recusados</th>
-                                <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:right;">Total Manipulado</th>
+                                <th style="background:#0f172a; color:#fff; padding:12px; font-size:11px; text-transform:uppercase; text-align:right;">Total Carregado</th>
                             </tr>
                         </thead>
                         <tbody>${linhasClientes}</tbody>
